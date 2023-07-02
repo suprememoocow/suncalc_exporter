@@ -42,6 +42,37 @@ const sunTimesSeconds = new promClient.Gauge({
   labelNames: ["sun_event"],
 });
 
+const moonPositionAzimuthGauge = new promClient.Gauge({
+  name: "moon_position_azimuth_degrees",
+  help: "Azimuth of the moon at current location, in degrees",
+  registers: [register],
+});
+
+const moonPositionAltitudeGauge = new promClient.Gauge({
+  name: "moon_position_altitude_degrees",
+  help: "Altitude of the moon at current location, in degrees",
+  registers: [register],
+});
+
+const moonPositionDistanceGauge = new promClient.Gauge({
+  name: "moon_position_distance_kilometers",
+  help: "Distance to the moon at current location, in kilometers",
+  registers: [register],
+});
+
+const moonPositionparallacticAngleGauge = new promClient.Gauge({
+  name: "moon_position_parallacticangle_degrees",
+  help: "Parallactic Angle to the moon at current location, in degrees",
+  registers: [register],
+});
+
+const moonTimesSeconds = new promClient.Gauge({
+  name: "moon_event_time_seconds",
+  help: "Time, in seconds until event",
+  registers: [register],
+  labelNames: ["moon_event"],
+});
+
 function radiansToDegrees(rads) {
   return (rads * 180) / Math.PI;
 }
@@ -79,6 +110,7 @@ function updateGauges(latitude, longitude) {
   sunPositionAzimuthGauge.set(radiansToDegrees(sunPos.azimuth));
   sunPositionAltitudeGauge.set(radiansToDegrees(sunPos.altitude));
 
+  // get sun times
   let times = SunCalc.getTimes(now, latitude, longitude);
   let tomorrowTimes = SunCalc.getTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
@@ -90,6 +122,28 @@ function updateGauges(latitude, longitude) {
 
     sunTimesSeconds.set({ sun_event: e }, (timeOfEvent - now) / 1000);
   }
+
+  // get position of the moon
+  let moonPos = Suncalc.getMoonPosition(now, latitude, longitude);
+
+  moonPositionAzimuthGauge.set(radiansToDegrees(moonPos.azimuth));
+  moonPositionAltitudeGauge.set(radiansToDegrees(moonPos.altitude));
+  moonPositionDistanceGauge.set(moonPos.distance);
+  moonPositionParallacticAngleGauge.set(radiansToDegrees(moonPos.parallacticAngle));
+
+  // get moon times
+  let times = SunCalc.getMoonTimes(now, latitude, longitude);
+  let tomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude);
+
+  for (let e of moonEvents) {
+    let timeOfEvent = times[e];
+    if (timeOfEvent < now) {
+      timeOfEvent = tomorrowTimes[e];
+    }
+
+    moonTimesSeconds.set({ moon_event: e }, (timeOfEvent - now) / 1000);
+  }
+
 }
 
 function createServer(options) {
