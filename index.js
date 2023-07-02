@@ -121,6 +121,11 @@ const sunEvents = [
   "dawn",
 ];
 
+const moonEvents = [
+  "rise",
+  "set",
+];
+
 function updateGauges(latitude, longitude) {
   const now = new Date();
   const tomorrow = startOfTomorrow();
