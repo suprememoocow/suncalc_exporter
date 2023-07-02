@@ -91,8 +91,8 @@ const moonIlluminationAngleGauge = new promClient.Gauge({
   registers: [register],
 });
 
-const moonIlluminationZenithGauge = new promClient.Gauge({
-  name: "moon_illumination_zenith",
+const moonIlluminationZenithAngleGauge = new promClient.Gauge({
+  name: "moon_illumination_zenith_angle",
   help: "Zenith angle of the moons bright limb (anticlockwise)",
   registers: [register],
 });
