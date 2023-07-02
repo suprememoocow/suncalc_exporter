@@ -149,9 +149,9 @@ function updateGauges(latitude, longitude) {
   let sunTomorrowTimes = SunCalc.getSunTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
   for (let e of sunEvents) {
-    let timeOfEvent = sunTimes[e];
+    let timeOfEvent = sunTimes[e].ts;
     if (timeOfEvent < now) {
-      timeOfEvent = sunTomorrowTimes[e];
+      timeOfEvent = sunTomorrowTimes[e].ts;
     }
 
     sunTimesSeconds.set({ sun_event: e }, (timeOfEvent - now) / 1000);
@@ -178,9 +178,9 @@ function updateGauges(latitude, longitude) {
   let moonTomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
   for (let e of moonEvents) {
-    let timeOfEvent = moonTimes[e];
+    let timeOfEvent = moonTimes[e].ts;
     if (timeOfEvent < now) {
-      timeOfEvent = moonTomorrowTimes[e];
+      timeOfEvent = moonTomorrowTimes[e].ts;
     }
 
     moonTimesSeconds.set({ moon_event: e }, (timeOfEvent - now) / 1000);
