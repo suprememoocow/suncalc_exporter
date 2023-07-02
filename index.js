@@ -182,7 +182,7 @@ function updateGauges(latitude, longitude) {
     if (timeOfEvent < now) {
       timeOfEvent = moonTomorrowTimes[e].ts;
     }
-
+    console.error("event ${e} at ${timeOfEvent}";
     moonTimesSeconds.set({ moon_event: e }, (timeOfEvent - now) / 1000);
   }
 
