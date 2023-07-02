@@ -140,13 +140,13 @@ function updateGauges(latitude, longitude) {
   sunPositionAltitudeGauge.set(radiansToDegrees(sunPos.altitude));
 
   // get sun times
-  let times = SunCalc.getTimes(now, latitude, longitude);
-  let tomorrowTimes = SunCalc.getTimes(tomorrowTimezoneAdjusted, latitude, longitude);
+  let sunTimes = SunCalc.getTimes(now, latitude, longitude);
+  let sunTomorrowTimes = SunCalc.getTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
   for (let e of sunEvents) {
-    let timeOfEvent = times[e];
+    let timeOfEvent = sunTimeimes[e];
     if (timeOfEvent < now) {
-      timeOfEvent = tomorrowTimes[e];
+      timeOfEvent = sunTomorrowTimes[e];
     }
 
     sunTimesSeconds.set({ sun_event: e }, (timeOfEvent - now) / 1000);
@@ -169,13 +169,13 @@ function updateGauges(latitude, longitude) {
   moonIlluminationZenithAngleGauge.set(radiansToDegrees(moonPos.parallacticAngle - moonIllum.angle));
   
   // get moon times
-  let times = SunCalc.getMoonTimes(now, latitude, longitude);
-  let tomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude);
+  let moonTimes = SunCalc.getMoonTimes(now, latitude, longitude);
+  let moonTomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
   for (let e of moonEvents) {
-    let timeOfEvent = times[e];
+    let timeOfEvent = moonTimes[e];
     if (timeOfEvent < now) {
-      timeOfEvent = tomorrowTimes[e];
+      timeOfEvent = moonTomorrowTimes[e];
     }
 
     moonTimesSeconds.set({ moon_event: e }, (timeOfEvent - now) / 1000);
