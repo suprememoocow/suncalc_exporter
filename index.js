@@ -102,23 +102,28 @@ function radiansToDegrees(rads) {
 }
 
 const sunEvents = [
-  "sunrise",
-  "sunriseEnd",
-  "goldenHourEnd",
-  "solarNoon",
-  "goldenHour",
-  "goldenHourEnd",
-  "solarNoon",
-  "goldenHour",
-  "sunsetStart",
-  "sunset",
-  "dusk",
-  "nauticalDusk",
-  "night",
-  "nadir",
-  "nightEnd",
+  "astronomicalDawn",
+  "amateurDawn",
   "nauticalDawn",
-  "dawn",
+  "blueHourDawnStart",
+  "civilDawn",
+  "blueHourDawnEnd",
+  "goldenHourDawnStart",
+  "sunriseStart",
+  "sunriseEnd",
+  "goldenHourDawnEnd",
+  "solarNoon",
+  "goldenHourDuskStart",
+  "sunsetStart",
+  "sunsetEnd",
+  "goldenHourDuskEnd",
+  "blueHourDuskStart",
+  "civilDusk",
+  "blueHourDuskEnd",
+  "nauticalDusk",
+  "amateurDusk",
+  "astronomicalDusk",
+  "nadir",
 ];
 
 const moonEvents = [
@@ -140,8 +145,8 @@ function updateGauges(latitude, longitude) {
   sunPositionAltitudeGauge.set(radiansToDegrees(sunPos.altitude));
 
   // get sun times
-  let sunTimes = SunCalc.getTimes(now, latitude, longitude);
-  let sunTomorrowTimes = SunCalc.getTimes(tomorrowTimezoneAdjusted, latitude, longitude);
+  let sunTimes = SunCalc.getSunTimes(now, latitude, longitude);
+  let sunTomorrowTimes = SunCalc.getSunTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
   for (let e of sunEvents) {
     let timeOfEvent = sunTimes[e];
