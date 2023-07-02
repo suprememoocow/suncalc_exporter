@@ -144,7 +144,7 @@ function updateGauges(latitude, longitude) {
   let sunTomorrowTimes = SunCalc.getTimes(tomorrowTimezoneAdjusted, latitude, longitude);
 
   for (let e of sunEvents) {
-    let timeOfEvent = sunTimeimes[e];
+    let timeOfEvent = sunTimes[e];
     if (timeOfEvent < now) {
       timeOfEvent = sunTomorrowTimes[e];
     }
