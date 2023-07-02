@@ -60,7 +60,7 @@ const moonPositionDistanceGauge = new promClient.Gauge({
   registers: [register],
 });
 
-const moonPositionparallacticAngleGauge = new promClient.Gauge({
+const moonPositionParallacticAngleGauge = new promClient.Gauge({
   name: "moon_position_parallacticangle_degrees",
   help: "Parallactic Angle to the moon at current location, in degrees",
   registers: [register],
@@ -71,6 +71,30 @@ const moonTimesSeconds = new promClient.Gauge({
   help: "Time, in seconds until event",
   registers: [register],
   labelNames: ["moon_event"],
+});
+
+const moonIlluminationFractionGauge = new promClient.Gauge({
+  name: "moon_illumination_fraction",
+  help: "Illuminated fraction of the moon; varies from 0.0 (new moon) to 1.0 (full moon)",
+  registers: [register],
+});
+
+const moonIlluminationPhaseGauge = new promClient.Gauge({
+  name: "moon_illumination_phase",
+  help: "Moon phase; Varies through 0.0 New Moon, Waxing Crescent, 0.25 First Quarter, Waxing Gibbous, 0.5 Full Moon, Waning Gibbous, 0.75 Last Quarter, Waning Crescent",
+  registers: [register],
+});
+
+const moonIlluminationAngleGauge = new promClient.Gauge({
+  name: "moon_illumination_angle",
+  help: "Midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive",
+  registers: [register],
+});
+
+const moonIlluminationZenithGauge = new promClient.Gauge({
+  name: "moon_illumination_zenith",
+  help: "Zenith angle of the moons bright limb (anticlockwise)",
+  registers: [register],
 });
 
 function radiansToDegrees(rads) {
@@ -124,13 +148,21 @@ function updateGauges(latitude, longitude) {
   }
 
   // get position of the moon
-  let moonPos = Suncalc.getMoonPosition(now, latitude, longitude);
+  let moonPos = SunCalc.getMoonPosition(now, latitude, longitude);
 
   moonPositionAzimuthGauge.set(radiansToDegrees(moonPos.azimuth));
   moonPositionAltitudeGauge.set(radiansToDegrees(moonPos.altitude));
   moonPositionDistanceGauge.set(moonPos.distance);
   moonPositionParallacticAngleGauge.set(radiansToDegrees(moonPos.parallacticAngle));
 
+  // get illumination of the moon
+  let moonIllum = SunCalc.getMoonIllumination(now, latitude, longitude);
+
+  moonIlluminationFractionGauge.set(moonIllum.fraction);
+  moonIlluminationPhaseGauge.set(moonIllum.phase);
+  moonIlluminationAngleGauge.set(radiansToDegrees(moonIllum.angle));
+  moonIlluminationZenithAngleGauge.set(radiansToDegrees(moonPos.parallacticAngle - moonIllum.angle));
+  
   // get moon times
   let times = SunCalc.getMoonTimes(now, latitude, longitude);
   let tomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude);
