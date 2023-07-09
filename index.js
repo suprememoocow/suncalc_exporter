@@ -86,19 +86,24 @@ const moonIlluminationPhaseGauge = new promClient.Gauge({
 });
 
 const moonIlluminationAngleGauge = new promClient.Gauge({
-  name: "moon_illumination_angle",
+  name: "moon_illumination_angle_degrees",
   help: "Midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive",
   registers: [register],
 });
 
 const moonIlluminationZenithAngleGauge = new promClient.Gauge({
-  name: "moon_illumination_zenith_angle",
+  name: "moon_illumination_zenith_angle_degrees",
   help: "Zenith angle of the moons bright limb (anticlockwise)",
   registers: [register],
 });
 
 function radiansToDegrees(rads) {
   return (rads * 180) / Math.PI;
+}
+
+let roundOff = (num, places) => {
+  const x = Math.pow(10,places);
+  return Math.round(num * x) / x;
 }
 
 const sunEvents = [
@@ -128,63 +133,91 @@ const sunEvents = [
 
 const moonEvents = [
   "rise",
+  "highest",
   "set",
+  "nextNewMoon",
+  "nextFullMoon",
+  "moonAge",
 ];
 
 function updateGauges(latitude, longitude) {
+
+//  const now_ts = (new Date()).getTime();
+//  const tomorrow_ts = (startOfTomorrow()).getTime();
+
   const now = new Date();
   const tomorrow = startOfTomorrow();
 
   // suncalc seems to be based on UTC dates
   const tomorrowTimezoneAdjusted = new Date(tomorrow.valueOf() - tomorrow.getTimezoneOffset() * 60 * 1000);
 
-  // get position of the sun (azimuth and altitude) at today's sunrise
+  // get position of the sun (azimuth and altitude)
   let sunPos = SunCalc.getPosition(now, latitude, longitude);
-
-  sunPositionAzimuthGauge.set(radiansToDegrees(sunPos.azimuth));
-  sunPositionAltitudeGauge.set(radiansToDegrees(sunPos.altitude));
+  sunPositionAzimuthGauge.set(roundOff(sunPos.azimuthDegrees, 2));
+  sunPositionAltitudeGauge.set(roundOff(sunPos.altitudeDegrees, 2));
+  //sunPositionAltitudeGauge.set(sunPos.altitudeDegrees));
+  //sunPositionAltitudeGauge.set(sunPos.altitudeDegrees));
 
   // get sun times
-  let sunTimes = SunCalc.getSunTimes(now, latitude, longitude);
-  let sunTomorrowTimes = SunCalc.getSunTimes(tomorrowTimezoneAdjusted, latitude, longitude);
+  let sunTimes = SunCalc.getSunTimes(now, latitude, longitude, 0, false, true);
+  let sunTomorrowTimes = SunCalc.getSunTimes(tomorrowTimezoneAdjusted, latitude, longitude, 0, false, true);
 
   for (let e of sunEvents) {
+  // TBD handle valid = false
     let timeOfEvent = sunTimes[e].ts;
-    if (timeOfEvent < now) {
+    let valid = sunTimes[e].valid;
+    if (timeOfEvent < now ) {
       timeOfEvent = sunTomorrowTimes[e].ts;
+      valid = sunTomorrowTimes[e].valid;
     }
-
-    sunTimesSeconds.set({ sun_event: e }, (timeOfEvent - now) / 1000);
+    if (valid==true) {
+      sunTimesSeconds.set({ sun_event: e }, roundOff((timeOfEvent - now) / 1000, 0));
+    }
   }
 
   // get position of the moon
   let moonPos = SunCalc.getMoonPosition(now, latitude, longitude);
+  moonPositionAzimuthGauge.set(roundOff(moonPos.azimuthDegrees, 2));
+  moonPositionAltitudeGauge.set(roundOff(moonPos.altitudeDegrees, 2));
+  moonPositionDistanceGauge.set(roundOff(moonPos.distance, 0));
+  moonPositionParallacticAngleGauge.set(roundOff(moonPos.parallacticAngleDegrees, 2));
 
-  moonPositionAzimuthGauge.set(radiansToDegrees(moonPos.azimuth));
-  moonPositionAltitudeGauge.set(radiansToDegrees(moonPos.altitude));
-  moonPositionDistanceGauge.set(moonPos.distance);
-  moonPositionParallacticAngleGauge.set(radiansToDegrees(moonPos.parallacticAngle));
-
-  // get illumination of the moon
-  let moonIllum = SunCalc.getMoonIllumination(now, latitude, longitude);
-
-  moonIlluminationFractionGauge.set(moonIllum.fraction);
-  moonIlluminationPhaseGauge.set(moonIllum.phase);
-  moonIlluminationAngleGauge.set(radiansToDegrees(moonIllum.angle));
-  moonIlluminationZenithAngleGauge.set(radiansToDegrees(moonPos.parallacticAngle - moonIllum.angle));
-  
   // get moon times
-  let moonTimes = SunCalc.getMoonTimes(now, latitude, longitude);
-  let moonTomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude);
+  let moonTimes = SunCalc.getMoonTimes(now, latitude, longitude, true);
+  let moonTomorrowTimes = SunCalc.getMoonTimes(tomorrowTimezoneAdjusted, latitude, longitude, true);
 
   for (let e of moonEvents) {
-    let timeOfEvent = moonTimes[e].ts;
-    if (timeOfEvent < now) {
-      timeOfEvent = moonTomorrowTimes[e].ts;
+    if ( typeof moonTimes[e] !== 'undefined') {
+      let timeOfEvent = moonTimes[e].getTime();
+      if (timeOfEvent < now) {
+        timeOfEvent = moonTomorrowTimes[e].getTime();
+      }
+      moonTimesSeconds.set({ moon_event: 'moon' + e[0].toUpperCase() + e.slice(1).toLowerCase() }, roundOff((timeOfEvent - now) / 1000, 0));
     }
-    console.error("event ${e} at ${timeOfEvent}");
-    moonTimesSeconds.set({ moon_event: e }, (timeOfEvent - now) / 1000);
   }
+
+  // get current illumination of the moon
+  let moonIllum = SunCalc.getMoonIllumination(now, latitude, longitude);
+  moonIlluminationFractionGauge.set(roundOff(moonIllum.fraction, 2));
+  moonIlluminationPhaseGauge.set(roundOff(moonIllum.phaseValue, 2));
+  moonIlluminationAngleGauge.set(roundOff(radiansToDegrees(moonIllum.angle), 2));
+  moonIlluminationZenithAngleGauge.set(roundOff(moonPos.parallacticAngle - radiansToDegrees(moonIllum.angle),2));
+
+  // get next new/full moon
+  moonTimesSeconds.set({ moon_event: 'nextNewMoon' }, roundOff((moonIllum.next.newMoon.value - now) / 1000, 0));
+  moonTimesSeconds.set({ moon_event: 'nextFullMoon' }, roundOff((moonIllum.next.fullMoon.value - now) / 1000, 0));
+
+  // get last new moon offset
+  let last_cycle_offset = 0
+  if ( moonIllum.fraction < 0.5 ) {
+    last_cycle_offset = 21;
+  } else {
+    last_cycle_offset = 35;
+  }
+  
+  // calculate age from last new moon to now
+  let lastMoonIllum = SunCalc.getMoonIllumination(now - (last_cycle_offset*24*60*60*1000), latitude, longitude);
+  moonTimesSeconds.set({ moon_event: 'moonAge' }, roundOff(((now - lastMoonIllum.next.newMoon.value) / 1000), 0));
 
 }
 
@@ -208,3 +241,4 @@ function createServer(options) {
 console.error(`Listening on port ${options.listenPort} for ${options.latitude} ${options.longitude}`);
 
 http.createServer(createServer(options)).listen(options.listenPort);
+
